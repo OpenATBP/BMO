@@ -12,8 +12,6 @@ for role_id in SELECTABLE_ROLE_IDS:
 
 ROLE_SELECT_MSG ='Choose a role to rep your favorite character and get a special name color!\nNote that you can only have one color role at a time.'
 
-MY_GUILD = discord.Object(id=929861280456671324)  # replace with your guild id
-
 class RoleDropdown(discord.ui.Select):
     def __init__(self):
         # Set the options that will be presented inside the dropdown
