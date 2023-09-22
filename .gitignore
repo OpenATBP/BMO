@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Secret Files
+config.js
+
+# Node Modules
+node_modules/

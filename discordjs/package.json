@@ -1,0 +1,22 @@
+{
+  "name": "bmo-js",
+  "version": "1.0.0",
+  "description": "Cute Discord used on the OpenATBP Discord to register and moderate roles, also made to love.",
+  "main": "bot.js",
+  "scripts": {
+    "test": "node bot.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OpenATBP/BMO.git"
+  },
+  "author": "OpenATBP",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/OpenATBP/BMO/issues"
+  },
+  "homepage": "https://github.com/OpenATBP/BMO#readme",
+  "dependencies": {
+    "discord.js": "^14.13.0"
+  }
+}
