@@ -46,7 +46,11 @@ module.exports = {
 		.setName('rolemessage')
 		.setDescription('Creates the role message in a designated chat.'),
 	async execute(interaction) {
-		createRoleSelector(interaction.client);
-    interaction.reply({content: 'Message created.', ephemeral: true}).catch(console.error);
+		if(config.admin_ids.includes(interaction.user.id)){
+			createRoleSelector(interaction.client);
+	    interaction.reply({content: 'Message created.', ephemeral: true}).catch(console.error);
+		}else{
+			interaction.reply({content: 'You do not have permission to use this.', ephemeral:true}).catch(console.error);
+		}
 	},
 };

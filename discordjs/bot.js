@@ -1,11 +1,39 @@
 // Require the necessary discord.js classes
-const { Client, Collection, REST, Routes, Events, GatewayIntentBits, SlashCommandBuilder } = require('discord.js');
+const { Client, Collection, REST, Routes, Events, GatewayIntentBits, SlashCommandBuilder, Partials } = require('discord.js');
 const config = require('./config.js');
 const fs = require('node:fs');
 const path = require('node:path');
 
 // Create a new client instance
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+  partials: [
+    Partials.Message, // for message
+    Partials.Channel, // for text channel
+    Partials.GuildMember, // for guild member
+    Partials.Reaction, // for message reaction
+    Partials.GuildScheduledEvent, // for guild events
+    Partials.User, // for discord user
+    Partials.ThreadMember, // for thread member
+  ],
+  intents: [
+    GatewayIntentBits.Guilds, // for guild related things
+    GatewayIntentBits.GuildMembers, // for guild members related things
+    GatewayIntentBits.GuildBans, // for manage guild bans
+    GatewayIntentBits.GuildEmojisAndStickers, // for manage emojis and stickers
+    GatewayIntentBits.GuildIntegrations, // for discord Integrations
+    GatewayIntentBits.GuildWebhooks, // for discord webhooks
+    GatewayIntentBits.GuildInvites, // for guild invite managing
+    GatewayIntentBits.GuildVoiceStates, // for voice related things
+    GatewayIntentBits.GuildPresences, // for user presence things
+    GatewayIntentBits.GuildMessages, // for guild messages things
+    GatewayIntentBits.GuildMessageReactions, // for message reactions things
+    GatewayIntentBits.GuildMessageTyping, // for message typing things
+    GatewayIntentBits.DirectMessages, // for dm messages
+    GatewayIntentBits.DirectMessageReactions, // for dm message reaction
+    GatewayIntentBits.DirectMessageTyping, // for dm message typinh
+    GatewayIntentBits.MessageContent, // enable if you need message content things
+  ],
+});
 client.commands = new Collection();
 
 const commands = [];
@@ -13,9 +41,7 @@ const commands = [];
 const foldersPath = path.join(__dirname, 'commands');
 const commandFolders = fs.readdirSync(foldersPath);
 
-for (const folder of commandFolders) {
 	// Grab all the command files from the commands directory you created earlier
-	const commandsPath = path.join(foldersPath, folder);
 	const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
 	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
 	for (const file of commandFiles) {
@@ -27,7 +53,6 @@ for (const folder of commandFolders) {
 			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
 		}
 	}
-}
 
 // Construct and prepare an instance of the REST module
 const rest = new REST().setToken(config.client_token);
