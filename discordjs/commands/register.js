@@ -35,13 +35,13 @@ module.exports = {
 		        var listArray2 = [];
 		        var listArray3 = [];
 		        for(var name1 of list1){
-		          listArray1.push(name1['__cdata'].toLowerCase());
+		          listArray1.push(name1['__cdata'].toUpperCase());
 		        }
 		        for(var name2 of list2){
-		          listArray2.push(name2['__cdata'].toLowerCase());
+		          listArray2.push(name2['__cdata'].toUpperCase());
 		        }
 		        for(var name3 of list3){
-		          listArray3.push(name3['__cdata'].toLowerCase());
+		          listArray3.push(name3['__cdata'].toUpperCase());
 		        }
 		        const database = mongoClient.db('openatbp');
 		        const players = database.collection('players');
@@ -56,22 +56,17 @@ module.exports = {
 		                if(m.author.id == interaction.user.id){
 		                  var nameSplit = m.content.split(' ');
 		                  if(nameSplit.length > 1){
-		                    var requirement1 = listArray1.includes(nameSplit[0].toLowerCase());
-		                    var requirement2 = listArray2.includes(nameSplit[1].toLowerCase()) || listArray3.includes(nameSplit[1].toLowerCase());
+		                    var requirement1 = listArray1.includes(nameSplit[0].toUpperCase()) || listArray2.includes(nameSplit[0].toUpperCase());
+		                    var requirement2 = listArray2.includes(nameSplit[1].toUpperCase()) || listArray3.includes(nameSplit[1].toUpperCase());
 		                    if(nameSplit.length == 3){
-		                      requirement2 = listArray2.includes(nameSplit[1].toLowerCase) && listArray3.includes(nameSplit[2].toLowerCase());
+		                      requirement2 = listArray2.includes(nameSplit[1].toUpperCase()) && listArray3.includes(nameSplit[2].toUpperCase());
 		                    }
 		                    console.log(`Requirement 1: ${requirement1} | Requirement 2: ${requirement2}`);
 		                    if(requirement1 && requirement2){
-		                      const query = {"user.dname": {$regex: m.content, $options: 'i'}};
+		                      const query = {"user.dname": {$regex: m.content.toUpperCase(), $options: 'i'}};
 		                      players.findOne(query).then((doc) => {
 		                        if(doc == null){ //Create User / give auth code
-		                          var modifiedName = "";
-		                          for(var n of nameSplit){
-		                            var firstLetter = n.charAt(0).toUpperCase();
-		                            modifiedName+= firstLetter + n.slice(1) + " ";
-		                          }
-		                          var blankUser = {user: {TEGid: crypto.randomUUID(), dname: modifiedName.substring(0,modifiedName.length-1), authid: interaction.user.id}};
+		                          var blankUser = {user: {TEGid: crypto.randomUUID(), dname: m.content.toUpperCase(), authid: interaction.user.id}};
 		                          players.insertOne(blankUser).then(() => {
 		                            interaction.editReply({content:'Your final step is to authenticate using this link! Congrats! ' + config.oauth_url,ephemeral:true}).then(() => {
 		                              m.reply('Your final step is to authenticate using this link! Congrats! ' + config.oauth_url + " Please copy and paste this into Waterfox Classic to login successfully");
