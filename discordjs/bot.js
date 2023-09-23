@@ -1,51 +1,76 @@
 // Require the necessary discord.js classes
-const { Client, Events, GatewayIntentBits, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, SlashCommandBuilder, ActionRowBuilder } = require('discord.js');
+const { Client, Collection, REST, Routes, Events, GatewayIntentBits, SlashCommandBuilder } = require('discord.js');
 const config = require('./config.js');
+const fs = require('node:fs');
+const path = require('node:path');
 
 // Create a new client instance
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+client.commands = new Collection();
+
+const commands = [];
+// Grab all the command files from the commands directory you created earlier
+const foldersPath = path.join(__dirname, 'commands');
+const commandFolders = fs.readdirSync(foldersPath);
+
+for (const folder of commandFolders) {
+	// Grab all the command files from the commands directory you created earlier
+	const commandsPath = path.join(foldersPath, folder);
+	const commandFiles = fs.readdirSync('./commands/').filter(file => file.endsWith('.js'));
+	// Grab the SlashCommandBuilder#toJSON() output of each command's data for deployment
+	for (const file of commandFiles) {
+		const command = require(`./commands/${file}`);
+		if ('data' in command && 'execute' in command) {
+			client.commands.set(command.data.name, command);
+			commands.push(command.data.toJSON());
+		} else {
+			console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+		}
+	}
+}
+
+// Construct and prepare an instance of the REST module
+const rest = new REST().setToken(config.client_token);
+
+// and deploy your commands!
+(async () => {
+	try {
+		console.log(`Started refreshing ${commands.length} application (/) commands.`);
+
+		// The put method is used to fully refresh all commands in the guild with the current set
+		const data = await rest.put(
+			Routes.applicationGuildCommands(config.client_id, config.guild_id),
+			{ body: commands },
+		);
+
+		console.log(`Successfully reloaded ${data.length} application (/) commands.`);
+	} catch (error) {
+		// And of course, make sure you catch and log any errors!
+		console.error(error);
+	}
+})();
+
+var checkRoles = function(member){
+	return new Promise(function(resolve, reject) {
+
+		console.log(member.roles.resolve(SELECTABLE_ROLE_IDS));
+		member.roles.fetch().then((roles) => {
+			for(var role of roles){
+				for(var selectAbleRole of SELECTABLE_ROLE_IDS){
+					if(role[0] == selectAbleRole) resolve(role[0]);
+				}
+			}
+		}).catch((err) => {
+			reject(err);
+		});
+	});
+};
 
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, c => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
-  client.guilds.fetch(config.guild_id).then((guild) => {
-    guild.channels.fetch(config.roles_channel).then((channel) => {
-      const select = new StringSelectMenuBuilder()
-			.setCustomId('roleSelect')
-			.setPlaceholder('Choose your role...')
-			.addOptions(
-				new StringSelectMenuOptionBuilder().setLabel('No Color').setValue('NONE'),
-				new StringSelectMenuOptionBuilder().setLabel('BMO Buddies').setValue('947258999831658577'),
-        new StringSelectMenuOptionBuilder().setLabel('Friends of Finn').setValue('947259030773051452'),
-        new StringSelectMenuOptionBuilder().setLabel('Fionna Followers').setValue('947259059009093674'),
-        new StringSelectMenuOptionBuilder().setLabel('Flame Princess Party').setValue('947259110695534622'),
-        new StringSelectMenuOptionBuilder().setLabel('Gunter Gatherers').setValue('947259138679910440'),
-        new StringSelectMenuOptionBuilder().setLabel('Ice King\'s Devotees').setValue('947259169206042676'),
-        new StringSelectMenuOptionBuilder().setLabel('Jake Jostlers').setValue('947259212210249830'),
-        new StringSelectMenuOptionBuilder().setLabel('Lemongrab Lovers').setValue('947259228601585694'),
-        new StringSelectMenuOptionBuilder().setLabel('Lumpy Space Squad').setValue('947259235459301416'),
-        new StringSelectMenuOptionBuilder().setLabel('Magic Man Mainers').setValue('947259315796979723'),
-        new StringSelectMenuOptionBuilder().setLabel('Marceline\'s Marauders').setValue('947259365319143475'),
-        new StringSelectMenuOptionBuilder().setLabel('PepBut Pwners').setValue('947259395396468806'),
-        new StringSelectMenuOptionBuilder().setLabel('Bubblegum Battalion').setValue('947259450270572554'),
-        new StringSelectMenuOptionBuilder().setLabel('Rattleballers').setValue('947259510811144263'),
-        new StringSelectMenuOptionBuilder().setLabel('Billy\'s Bunch').setValue('947259545330266174'),
-        new StringSelectMenuOptionBuilder().setLabel('NEPTR Nemeses').setValue('947259592235171911'),
-        new StringSelectMenuOptionBuilder().setLabel('Cinnamon Congregation').setValue('947259618244042802'),
-        new StringSelectMenuOptionBuilder().setLabel('Hunson Admirers').setValue('947259648837296159'),
-        new StringSelectMenuOptionBuilder().setLabel('Lich Listeners').setValue('947284774706360383'),
-			);
-      const row = new ActionRowBuilder()
-			.addComponents(select);
-      channel.send({
-        content: 'Choose a role to rep your favorite character (BMO!) and get a special name color!\nNote that you can only have one color role at a time',
-        components: [row]
-      }).then((mes) => {
-        console.log("Message was a success!");
-      }).catch(console.error);
-    }).catch(console.error);
-  }).catch(console.error);
+	//createRoleSelector();
 });
 
 client.on(Events.InteractionCreate, (interaction) => {
@@ -54,17 +79,27 @@ client.on(Events.InteractionCreate, (interaction) => {
     if (!command) {
     		console.error(`No command matching ${interaction.commandName} was found.`);
     		return;
-    	}
+    	}else{
+				command.execute(interaction);
+			}
   }else{
     console.log(interaction.values[0]);
     var roleId = interaction.values[0];
     var member = interaction.member;
     if(roleId != undefined){
-      interaction.reply({content: 'Role added!', ephemeral: true}).then((m) => {
-        member.roles.add(roleId).then((user) => {
-          user.send('Role added!').catch(console.error);
-        }).catch(console.error);
-      });
+			const SELECTABLE_ROLE_IDS = ['947258999831658577', '947259030773051452', '947259059009093674', '947259110695534622', '947259138679910440',
+			                    '947259169206042676', '947259212210249830', '947259228601585694', '947259235459301416', '947259315796979723',
+			                    '947259365319143475', '947259395396468806', '947259450270572554', '947259510811144263', '947259545330266174',
+			                    '947259592235171911', '947259618244042802', '947259648837296159', '947284774706360383'];
+			member.roles.remove(SELECTABLE_ROLE_IDS).then(() => {
+				if(roleId != "NONE"){
+					member.roles.add(roleId).then(() => {
+						interaction.reply({content: 'Role added!', ephemeral: true}).catch(console.error);
+					}).catch(console.error);
+				}else{
+					interaction.reply({content: 'Role removed!', ephemeral: true}).catch(console.error);
+				}
+			}).catch(console.error);
     }
   }
 
