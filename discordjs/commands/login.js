@@ -8,8 +8,8 @@ const mongoClient = new MongoClient(config.mongo_uri);
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('register')
-		.setDescription('Register your account for OpenATBP!'),
+		.setName('login')
+		.setDescription('Login to OpenATBP!'),
 	async execute(interaction) {
 		interaction.guild.roles.fetch().then((roles) => {
 			var hasAccess = false;
