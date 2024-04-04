@@ -8,7 +8,7 @@ module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('friend')
 		.setDescription('Adds a friend!')
-    .addUserOption(option => option.setName('player').setDescription('Provide the player you wish to remove from OpenATBP').setRequired(true)),
+    .addUserOption(option => option.setName('player').setDescription('Provide the player you wish to add as a friend').setRequired(true)),
 	async execute(interaction) {
       const target = interaction.options.getUser('player');
       const database = mongoClient.db('openatbp');
