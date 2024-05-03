@@ -49,7 +49,7 @@ module.exports = {
 		        players.findOne(query1).then((doc) => {
 		          if(doc == null){
 		            interaction.deferReply({ephemeral:true});
-		            interaction.user.send('You are now registering for OpenATBP! Please enter in your name (must match CN naming system)').then((mes) => {
+		            interaction.user.send('You are now registering for OpenATBP! Please enter in your name (must match CN naming system). If I do not respond, please try again!').then((mes) => {
 		              const filter = collected => collected.author.id === mes.author.id;
 		              const collector = mes.channel.createMessageCollector({time: 60_000});
 		              collector.on('collect', (m) => {
@@ -69,7 +69,7 @@ module.exports = {
 		                          var blankUser = {user: {TEGid: crypto.randomUUID(), dname: m.content.toUpperCase(), authid: interaction.user.id}};
 		                          players.insertOne(blankUser).then(() => {
 		                            interaction.editReply({content:'Your final step is to authenticate using this link! Congrats! ' + config.oauth_url,ephemeral:true}).then(() => {
-		                              m.reply('Your final step is to authenticate using this link! Congrats! ' + config.oauth_url + " Please copy and paste this into Waterfox Classic to login successfully");
+		                              m.reply('Your final step is to authenticate using this link! Congrats! ' + config.oauth_url + " Please copy and paste this into Pale Moon (32 bit) to login successfully");
 		                            }).catch(console.error);
 		                          }).catch(console.error);
 		                          collector.stop();
