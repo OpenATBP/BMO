@@ -3,6 +3,7 @@ const { Client, Collection, REST, Routes, Events, GatewayIntentBits, SlashComman
 const config = require('./config.js');
 const fs = require('node:fs');
 const path = require('node:path');
+const request = require('request');
 
 // Create a new client instance
 const client = new Client({
@@ -95,7 +96,18 @@ var checkRoles = function(member){
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, c => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
+  client.user.setActivity(`Users Online: 0`);
 	//createRoleSelector();
+  setInterval(() => {
+    request.get(config.game_url+"data/users",(err,res,body) => {
+      if (err) return;
+      try{
+        client.user.setActivity(`Users Online: ${JSON.parse(body).users}`);
+      }catch(e){
+        console.log(e);
+      }
+    });
+  },1000*60);
 });
 
 client.on(Events.InteractionCreate, (interaction) => {
