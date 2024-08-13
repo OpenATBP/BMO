@@ -26,6 +26,12 @@ module.exports = {
 						break;
 					}
 				}
+				for(var n of config.bot_names){
+					if(name == n){
+						name = "[BOT ]" + name;
+						break;
+					}
+				}
 			}
 			const query = {"user.dname": name};
 			players.findOne(query).then((data) => {
@@ -36,7 +42,7 @@ module.exports = {
 				var message = `**${data.user.dname}** \n`;
 				message+=`ELO: ${data.player.elo}\n`;
 				message+=`PLAYED ${data.player.playsPVP} GAMES\n`;
-				message+=`WIN RATIO: ${(data.player.winsPVP/data.player.playsPVP).toFixed(2)*100}%\n`;
+				message+=`WIN RATIO: ${Math.floor((data.player.winsPVP/data.player.playsPVP).toFixed(2)*100)}%\n`;
 				message+=`AVERAGE KILLS PER LIFE: ${Math.round(data.player.kills/data.player.deaths)}\n`;
 				interaction.reply({content:message,ephemeral:false}).catch(console.error);
 			}).catch(console.error);
