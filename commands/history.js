@@ -82,7 +82,7 @@ module.exports = {
           interaction.reply({content:"No previous match history",ephemeral:true}).catch(console.error);
           return;
         }
-        var historyId = data.history[0];
+        var historyId = data.history[data.history.length-1];
 
         history.findOne({"_id":historyId}).then((hist) => {
           if (hist == null){
@@ -96,25 +96,25 @@ module.exports = {
             teamANames.push(k);
             if(k == data.user.dname){
               playerObj = hist['0'][`${k}`];
-              break;
             }
           }
           for(var k of Object.keys(hist['1'])){
             teamBNames.push(k);
             if(k == data.user.dname){
               playerObj = hist['1'][`${k}`];
-              break;
             }
           }
           var message = '';
           for(var i in teamANames){
             message+=teamANames[i];
-            if(i+1 != teamANames.length) message+=", ";
+            if(parseInt(i)+1 != teamANames.length) message+=", ";
           }
           message+=" v. ";
           for(var i in teamBNames){
             message+=teamBNames[i];
-            if(i+1 != teamBNames.length) message+=", ";
+            if(parseInt(i)+1 != teamBNames.length){
+							message+=", ";
+						}
           }
           message+="\n\n**PERSONAL STATS:** \n\n";
           for(var c of choices){
