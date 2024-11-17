@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder } = require('discord.js');
+const { SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ComponentType } = require('discord.js');
 const config = require('../config.js');
 const { MongoClient, RegExp } = require('mongodb');
 
@@ -36,6 +36,68 @@ const stats = [{name: 'Kills', value: 'kills'},
 {name: 'Elo', value: 'elo'},
 {name: 'Elo Gained', value: 'eloGain'}];
 
+async function sendMatchHistory(history, historyIndex, interaction, historyCollection, playerData, conf){
+	const previous = new ButtonBuilder().setCustomId('previous').setLabel("Previous").setStyle(ButtonStyle.Secondary);
+	const next = new ButtonBuilder().setCustomId('next').setLabel("Next").setStyle(ButtonStyle.Primary);
+	const row = new ActionRowBuilder();
+	if(historyIndex +1 < history.length) row.addComponents(previous);
+	if(historyIndex != 0) row.addComponents(next);
+	const hist = await historyCollection.findOne({"_id":history[historyIndex]});
+	if(hist != null){
+		var teamANames = [];
+		var teamBNames = [];
+		var playerObj = {};
+		for(var k of Object.keys(hist['0'])){
+			teamANames.push(k);
+			if(k == playerData.user.dname){
+				playerObj = hist['0'][`${k}`];
+			}
+		}
+		for(var k of Object.keys(hist['1'])){
+			teamBNames.push(k);
+			if(k == playerData.user.dname){
+				playerObj = hist['1'][`${k}`];
+			}
+		}
+		var message = '';
+		for(var i in teamANames){
+			message+=teamANames[i];
+			if(parseInt(i)+1 != teamANames.length) message+=", ";
+		}
+		message+=" v. ";
+		for(var i in teamBNames){
+			message+=teamBNames[i];
+			if(parseInt(i)+1 != teamBNames.length){
+				message+=", ";
+			}
+		}
+		message+="\n\n**PERSONAL STATS:** \n\n";
+		for(var c of choices){
+			if(c.value == playerObj.champion){
+				message+="Champion: " + c.name + "\n";
+				break;
+			}
+		}
+		for(var s of stats){
+			if(playerObj[`${s.value}`] != undefined){
+				message+=`${s.name}: ${playerObj[`${s.value}`]}\n`;
+			}
+		}
+		const collectorFilter = i => i.user.id === interaction.user.id;
+		const response = await conf.update({content: message, ephemeral: false, components: [row]});
+		try{
+			const confirmation = await response.awaitMessageComponent({filter: collectorFilter, time: 60_000});
+			if(confirmation.customId == 'previous'){
+				sendMatchHistory(history,historyIndex+1,interaction,historyCollection,playerData, confirmation);
+			}else if(confirmation.customId == 'next'){
+				sendMatchHistory(history,historyIndex-1,interaction,historyCollection,playerData, confirmation);
+			}
+		}catch(e){
+			await interaction.editReply({content: message, components: []});
+		}
+	}else interaction.editReply({content: "Did not work :(", components: []});
+}
+
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -48,10 +110,6 @@ module.exports = {
 				interaction.reply({content:'Please go to the spicy battle channel to use this command!',ephemeral:true});
 				return;
 			}
-      if(!config.admin_ids.includes(interaction.user.id)){
-        interaction.reply({content: 'Feature in progress...',ephemeral:true});
-        return;
-      }
 
 			const database = mongoClient.db('openatbp');
 			const players = database.collection('users');
@@ -73,7 +131,7 @@ module.exports = {
 				}
 			}
 			const query = {"user.dname": name};
-			players.findOne(query).then((data) => {
+			const data = await players.findOne(query);
 				if(data == null){
 					interaction.reply({content:"No user exists with that name!",ephemeral:true}).catch(console.error);
 					return;
@@ -82,9 +140,8 @@ module.exports = {
           interaction.reply({content:"No previous match history",ephemeral:true}).catch(console.error);
           return;
         }
-        var historyId = data.history[data.history.length-1];
-
-        history.findOne({"_id":historyId}).then((hist) => {
+				var historyId = data.history[data.history.length-1];
+        const hist = await history.findOne({"_id":historyId});
           if (hist == null){
             interaction.reply({content:"No valid history",ephemeral:true}).catch(console.error);
             return;
@@ -128,10 +185,21 @@ module.exports = {
               message+=`${s.name}: ${playerObj[`${s.value}`]}\n`;
             }
           }
-          interaction.reply({content:message,ephemeral:true}).catch(console.error);
-        }).catch(console.error);
-
-			}).catch(console.error);
+					const next = new ButtonBuilder().setCustomId('next').setLabel("Next").setStyle(ButtonStyle.Primary);
+					const row = new ActionRowBuilder().addComponents(next);
+					const collectorFilter = i => i.user.id === interaction.user.id;
+					const response = await interaction.reply({content: message, ephemeral: false, components: [row]});
+					try{
+						const confirmation = await response.awaitMessageComponent({filter: collectorFilter, time: 60_000});
+						console.log("Here!");
+						if(confirmation.customId == 'previous'){
+							sendMatchHistory(data.history,data.history.length-1,interaction,history,data,confirmation);
+						}else if(confirmation.customId == 'next'){
+							sendMatchHistory(data.history,data.history.length-2,interaction,history,data,confirmation);
+						}
+					}catch(e){
+						await interaction.editReply({content: message, components: []});
+					}
 		}finally{
 			console.log("Done!");
 		}

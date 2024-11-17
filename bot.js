@@ -120,6 +120,7 @@ client.on(Events.InteractionCreate, (interaction) => {
 				command.execute(interaction);
 			}
   }else{
+    if(interaction.customId == 'next' || interaction.customId == 'previous') return;
     console.log(interaction.values[0]);
     var roleId = interaction.values[0];
     var member = interaction.member;
