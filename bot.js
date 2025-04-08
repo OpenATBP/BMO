@@ -1,5 +1,5 @@
 // Require the necessary discord.js classes
-const { Client, Collection, REST, Routes, Events, GatewayIntentBits, SlashCommandBuilder, Partials } = require('discord.js');
+const { Client, Collection, REST, Routes, Events, GatewayIntentBits, SlashCommandBuilder, Partials, EmbedBuilder } = require('discord.js');
 const config = require('./config.js');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -91,6 +91,7 @@ var checkRoles = function(member){
 		});
 	});
 };
+var queueIds = [];
 
 // When the client is ready, run this code (only once)
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
@@ -102,13 +103,15 @@ client.once(Events.ClientReady, c => {
     request.get(config.game_url+"data/users",(err,res,body) => {
       if (err) return;
       try{
-        client.user.setActivity(`Users Online: ${JSON.parse(body).users}`);
+        client.user.setActivity(`Users Online: ${JSON.parse(body).users + queueIds.length}`);
       }catch(e){
         console.log(e);
       }
     });
   },1000*60);
 });
+
+
 
 client.on(Events.InteractionCreate, (interaction) => {
   if(interaction.isChatInputCommand()){
@@ -121,6 +124,79 @@ client.on(Events.InteractionCreate, (interaction) => {
 			}
   }else{
     if(interaction.customId == 'next' || interaction.customId == 'previous') return;
+    if(interaction.customId == 'queue'){
+      interaction.deferUpdate().then(() => {
+        var currentEmbed = interaction.message.embeds[0];
+        var playerList = currentEmbed.fields[0].value;
+        if (playerList.includes('No one') && !playerList.includes(",")){
+          playerList = interaction.member.displayName;
+          queueIds.push(interaction.user.id);
+        }
+        else{
+          if(playerList == interaction.member.displayName){
+            playerList = "No one";
+            queueIds = [];
+          }
+          else if(playerList.includes(interaction.member.displayName)){
+            var oldNames = playerList.split(", ");
+            var newNames = [];
+            for(var n of oldNames){
+              if (n != interaction.member.displayName) newNames.push(n);
+            }
+            playerList = newNames.join(", ");
+            var index = queueIds.indexOf(interaction.user.id);
+            if(index != -1) queueIds.splice(index,1);
+          }else{
+            playerList+= `, ${interaction.member.displayName}`;
+            queueIds.push(interaction.user.id);
+          }
+        }
+        if(queueIds.length > 0){
+          interaction.guild.members.fetch({user: queueIds, withPresences: true}).then((members) => {
+            for(var m of members){
+              if(m[1].presence.status == 'offline'){
+                if(playerList == m[1].displayName){
+                  playerList = "No one";
+                  queueIds = [];
+                }else{
+                  var oldNames = playerList.split(", ");
+                  var newNames = [];
+                  for(var n of oldNames){
+                    if (n != m[1].displayName) newNames.push(n);
+                  }
+                  playerList = newNames.join(", ");
+                  var index = queueIds.indexOf(m[1].user.id);
+                  if(index != -1) queueIds.splice(index,1);
+                }
+              }
+            }
+            if (queueIds.length >= 6){
+              client.guilds.fetch(config.guild_id).then((g) => {
+                g.channels.fetch(config.queue_chat_channel).then((c) => {
+                  var mentions = "";
+                  for(var i of queueIds){
+                    mentions+=`<@${i}> `;
+                  }
+                  c.send({content: `${mentions}Your battle party awaits! There are enough players to queue for a 3v3!`}).then(() => {
+                    playerList = '[QUEUE POPPED] No one';
+                    queueIds = [];
+                    var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
+                    interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
+                  }).catch(console.error);
+                }).catch(console.error);
+              }).catch(console.error);
+            }else{
+              var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
+              interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
+            }
+          }).catch(console.error);
+        }else{
+          var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
+          interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
+        }
+      }).catch(console.error);
+      return;
+    }
     console.log(interaction.values[0]);
     var roleId = interaction.values[0];
     var member = interaction.member;
