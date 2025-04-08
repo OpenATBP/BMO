@@ -144,8 +144,7 @@ client.on(Events.InteractionCreate, (interaction) => {
               if (n != interaction.member.displayName) newNames.push(n);
             }
             playerList = newNames.join(", ");
-            var index = queueIds.indexOf(interaction.user.id);
-            if(index != -1) queueIds.splice(index,1);
+            queueIds = queueIds.filter(i => i != interaction.user.id);
           }else{
             playerList+= `, ${interaction.member.displayName}`;
             queueIds.push(interaction.user.id);
@@ -165,8 +164,7 @@ client.on(Events.InteractionCreate, (interaction) => {
                     if (n != m[1].displayName) newNames.push(n);
                   }
                   playerList = newNames.join(", ");
-                  var index = queueIds.indexOf(m[1].user.id);
-                  if(index != -1) queueIds.splice(index,1);
+                  queueIds = queueIds.filter(i => i != m[1].user.id);
                 }
               }
             }
