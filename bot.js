@@ -97,13 +97,13 @@ var queueIds = [];
 // We use 'c' for the event parameter to keep it separate from the already defined 'client'
 client.once(Events.ClientReady, c => {
 	console.log(`Ready! Logged in as ${c.user.tag}`);
-  client.user.setActivity(`Users Online: 0`);
+  client.user.setActivity(`Online: 0 | LFG: 0`);
 	//createRoleSelector();
   setInterval(() => {
     request.get(config.game_url+"data/users",(err,res,body) => {
       if (err) return;
       try{
-        client.user.setActivity(`Users Online: ${JSON.parse(body).users + queueIds.length}`);
+        client.user.setActivity(`Online: ${JSON.parse(body).users} | LFG: ${queueIds.length}`);
       }catch(e){
         console.log(e);
       }
