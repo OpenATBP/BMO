@@ -16,7 +16,7 @@ module.exports = {
 		.addStringOption(o => o.setName('value').setDescription("What is it that you are trying to add?").setRequired(true)),
 	async execute(interaction) {
 
-		if (config.admin_ids.includes(interaction.user.id) || interaction.user.id == config.community_manager){
+		if (config.admin_ids.includes(interaction.user.id) || config.community_manager.includes(interaction.user.id)){
 			const database = mongoClient.db('openatbp');
 			const players = database.collection('users');
 
