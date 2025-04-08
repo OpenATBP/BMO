@@ -13,7 +13,8 @@ module.exports = {
 			}
 			const image = new AttachmentBuilder('img/rank-brackets.png');
             await interaction.reply({content: '**HERE ARE THE ELO RANGES FOR EACH RANK**:',
-                files: [image]
+                files: [image],
+				ephemeral: true
             });
 			
 		} catch (error) {
