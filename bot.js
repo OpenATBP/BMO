@@ -153,7 +153,8 @@ client.on(Events.InteractionCreate, (interaction) => {
         if(queueIds.length > 0){
           interaction.guild.members.fetch({user: queueIds, withPresences: true}).then((members) => {
             for(var m of members){
-              if(m[1].presence.status == 'offline'){
+              if(m[1].presence == null || m[1].presence.status == 'offline'){
+                if(m[1].presence == null) console.log(m[1]);
                 if(playerList == m[1].displayName){
                   playerList = "No one";
                   queueIds = [];
