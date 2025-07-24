@@ -5,6 +5,13 @@ const fs = require('node:fs');
 const path = require('node:path');
 const request = require('request');
 
+const { MongoClient, RegExp } = require('mongodb');
+
+const mongoClient = new MongoClient(config.mongo_uri);
+
+const database = mongoClient.db('openatbp');
+const players = database.collection('discord');
+
 // Create a new client instance
 const client = new Client({
   partials: [
@@ -125,74 +132,86 @@ client.on(Events.InteractionCreate, (interaction) => {
   }else{
     if(interaction.customId == 'next' || interaction.customId == 'previous') return;
     if(interaction.customId == 'queue'){
+      var removePlayer = false;
       interaction.deferUpdate().then(() => {
-        var currentEmbed = interaction.message.embeds[0];
-        var playerList = currentEmbed.fields[0].value;
-        if (playerList.includes('No one') && !playerList.includes(",")){
-          playerList = interaction.member.displayName;
-          queueIds.push(interaction.user.id);
-        }
-        else{
-          if(playerList == interaction.member.displayName){
-            playerList = "No one";
-            queueIds = [];
+        players.findOne({id: interaction.user.id}).then((d) => {
+          if (d != null && !d.preQueue) removePlayer = true;
+          var currentEmbed = interaction.message.embeds[0];
+          var playerList = currentEmbed.fields[0].value;
+          if (playerList.includes('No one') && !playerList.includes(",") && !removePlayer){
+            playerList = interaction.member.displayName;
+            queueIds.push({'id':interaction.user.id,'start':Date.now()});
           }
-          else if(playerList.includes(interaction.member.displayName)){
-            var oldNames = playerList.split(", ");
-            var newNames = [];
-            for(var n of oldNames){
-              if (n != interaction.member.displayName) newNames.push(n);
+          else{
+            if(playerList == interaction.member.displayName){
+              playerList = "No one";
+              queueIds = [];
             }
-            playerList = newNames.join(", ");
-            queueIds = queueIds.filter(i => i != interaction.user.id);
-          }else{
-            playerList+= `, ${interaction.member.displayName}`;
-            queueIds.push(interaction.user.id);
+            else if(playerList.includes(interaction.member.displayName)){
+              var oldNames = playerList.split(", ");
+              var newNames = [];
+              for(var n of oldNames){
+                if (n != interaction.member.displayName) newNames.push(n);
+              }
+              playerList = newNames.join(", ");
+              queueIds = queueIds.filter(i => i.id != interaction.user.id);
+            }else if(!removePlayer){
+              playerList+= `, ${interaction.member.displayName}`;
+              queueIds.push({'id':interaction.user.id,'start':Date.now()});
+            }
           }
-        }
-        if(queueIds.length > 0){
-          interaction.guild.members.fetch({user: queueIds, withPresences: true}).then((members) => {
-            for(var m of members){
-              if(m[1].presence == null || m[1].presence.status == 'offline'){
-                if(m[1].presence == null) console.log(m[1]);
-                if(playerList == m[1].displayName){
-                  playerList = "No one";
-                  queueIds = [];
-                }else{
-                  var oldNames = playerList.split(", ");
-                  var newNames = [];
-                  for(var n of oldNames){
-                    if (n != m[1].displayName) newNames.push(n);
+          if(queueIds.length > 0){
+            var ids = [];
+            for (var qId of queueIds){
+              ids.push(qId.id);
+            }
+            var timedOut = [];
+            for (var qId of queueIds){
+              if (Date.now() - (1000*60*60*3) > qId.start) timedOut.push(qId.id);
+            }
+            interaction.guild.members.fetch({user: ids, withPresences: true}).then((members) => {
+              for(var m of members){
+                if(m[1].presence == null || m[1].presence.status == 'offline' || timedOut.includes(m[1].user.id)){
+                  if(m[1].presence == null) console.log(m[1]);
+                  if(playerList == m[1].displayName){
+                    playerList = "No one";
+                    queueIds = [];
+                  }else{
+                    var oldNames = playerList.split(", ");
+                    var newNames = [];
+                    for(var n of oldNames){
+                      if (n != m[1].displayName) newNames.push(n);
+                    }
+                    playerList = newNames.join(", ");
+                    queueIds = queueIds.filter(i => i.id != m[1].user.id);
                   }
-                  playerList = newNames.join(", ");
-                  queueIds = queueIds.filter(i => i != m[1].user.id);
                 }
               }
-            }
-            if (queueIds.length >= 6){
-              client.guilds.fetch(config.guild_id).then((g) => {
-                g.channels.fetch(config.queue_chat_channel).then((c) => {
-                  var mentions = "";
-                  for(var i of queueIds){
-                    mentions+=`<@${i}> `;
-                  }
-                  c.send({content: `${mentions}Your battle party awaits! There are enough players to queue for a 3v3!`}).then(() => {
-                    playerList = '[QUEUE POPPED] No one';
-                    queueIds = [];
-                    var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
-                    interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
+              if (queueIds.length >= 6){
+                client.guilds.fetch(config.guild_id).then((g) => {
+                  g.channels.fetch(config.queue_chat_channel).then((c) => {
+                    var mentions = "";
+                    for(var i of queueIds){
+                      mentions+=`<@${i}> `;
+                    }
+                    c.send({content: `${mentions}Your battle party awaits! There are enough players to queue for a 3v3!`}).then(() => {
+                      playerList = '[QUEUE POPPED] No one';
+                      queueIds = [];
+                      var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
+                      interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
+                    }).catch(console.error);
                   }).catch(console.error);
                 }).catch(console.error);
-              }).catch(console.error);
-            }else{
-              var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
-              interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
-            }
-          }).catch(console.error);
-        }else{
-          var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
-          interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
-        }
+              }else{
+                var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
+                interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
+              }
+            }).catch(console.error);
+          }else{
+            var newEmbed = new EmbedBuilder().setTitle(currentEmbed.title).setDescription(currentEmbed.description).addFields({name: "In Queue", value: playerList});
+            interaction.editReply({embeds: [newEmbed], components: interaction.message.components});
+          }
+        }).catch(console.error);
       }).catch(console.error);
       return;
     }
