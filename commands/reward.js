@@ -12,6 +12,7 @@ module.exports = {
 		.addStringOption(opt => opt.setName('reward').setDescription("What do you want to reward?").addChoices(
 			{name: 'Coins', value: 'coins'},
 			{name: "Item", value: 'item'},
+			{name: 'Elo', value: 'elo'}
 		).setRequired(true))
 		.addStringOption(o => o.setName('value').setDescription("What is it that you are trying to add?").setRequired(true)),
 	async execute(interaction) {
@@ -28,6 +29,9 @@ module.exports = {
 					update = {$inc: {"player.coins":val}};
 				}else if(interaction.options.getString("reward") == 'item'){
 					update = {$addToSet: {"inventory":interaction.options.getString("value")}};
+				}else if(interaction.options.getString("reward") == 'elo'){
+					var val = parseInt(interaction.options.getString("value"));
+					update = {$inc: {"player.elo":val}};
 				}
 				players.updateOne(query,update).then((res) => {
 					if (res != null){
