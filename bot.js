@@ -192,7 +192,7 @@ client.on(Events.InteractionCreate, (interaction) => {
                   g.channels.fetch(config.queue_chat_channel).then((c) => {
                     var mentions = "";
                     for(var i of queueIds){
-                      mentions+=`<@${i}> `;
+                      mentions+=`<@${i.id}> `;
                     }
                     c.send({content: `${mentions}Your battle party awaits! There are enough players to queue for a 3v3!`}).then(() => {
                       playerList = '[QUEUE POPPED] No one';
