@@ -6,6 +6,7 @@ const mongoClient = new MongoClient(config.mongo_uri);
 
 const choices = [{name: "Billy", value: 'billy'},
 {name: "BMO", value: 'bmo'},
+{name: "Choose Goose", value: 'choosegoose'},
 {name: "Cinnamon Bun", value: 'cinnamonbun'},
 {name: "Finn", value: 'finn'},
 {name: "Fionna", value: 'fionna'},
@@ -33,6 +34,7 @@ module.exports = {
 			{name: 'Champ Rankings', value: 'all'},
 			{name: "Billy", value: 'billy'},
 			{name: "BMO", value: 'bmo'},
+			{name: "Choose Goose", value: 'choosegoose'},
 			{name: "Cinnamon Bun", value: 'cinnamonbun'},
 			{name: "Finn", value: 'finn'},
 			{name: "Fionna", value: 'fionna'},
