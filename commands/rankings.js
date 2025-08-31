@@ -10,7 +10,7 @@ module.exports = {
 		.setDescription('Displays the top 10 players in Battle Party!'),
 	async execute(interaction) {
 		try{
-			if(interaction.channelId != config.bot_channel){
+			if(interaction.channelId != config.bot_channel && interaction.guild.id == config.guild_id){
 				interaction.reply({content:'Please go to the spicy battle channel to use this command!',ephemeral:true});
 				return;
 			}

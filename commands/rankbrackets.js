@@ -7,7 +7,7 @@ module.exports = {
 		.setDescription('Displays ELO thresholds for each rank'),
 	async execute(interaction) {
 		try{
-			if(interaction.channelId != config.bot_channel){
+			if(interaction.channelId != config.bot_channel && interaction.guild.id == config.guild_id){
 				await interaction.reply({content:'Please go to the spicy battle channel to use this command!',ephemeral:true});
 				return;
 			}
@@ -16,7 +16,7 @@ module.exports = {
                 files: [image],
 				ephemeral: true
             });
-			
+
 		} catch (error) {
             console.error('Error executing the rankbrackets command:', error);
         }  finally{

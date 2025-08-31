@@ -106,7 +106,7 @@ module.exports = {
 		.addStringOption(option => option.setName('name').setDescription('Enter the display name of the player').setRequired(true)),
 	async execute(interaction) {
 		try{
-			if(interaction.channelId != config.bot_channel){
+			if(interaction.channelId != config.bot_channel && interaction.guild.id == config.guild_id){
 				interaction.reply({content:'Please go to the spicy battle channel to use this command!',ephemeral:true});
 				return;
 			}
